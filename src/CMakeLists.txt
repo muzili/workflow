@@ -86,7 +86,6 @@ if (KAFKA STREQUAL "y")
 			$<TARGET_OBJECTS:protocol_kafka>
 			$<TARGET_OBJECTS:factory_kafka>
 		)
-		target_link_libraries(${KAFKA_SHARED_LIB_NAME} lz4 z snappy)
 		set_target_properties(${KAFKA_SHARED_LIB_NAME} PROPERTIES OUTPUT_NAME "wfkafka")
 	endif ()
 endif ()
