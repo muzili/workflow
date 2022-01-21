@@ -8,11 +8,25 @@ project(tutorial
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+<<<<<<< HEAD
 find_library(LIBRT rt)
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
+=======
+if(ANDROID)
+	link_directories(${OPENSSL_LINK_DIR})
+else()
+	find_library(LIBRT rt)
+	find_package(OpenSSL REQUIRED)
+endif()
+>>>>>>> 90cab0cb9a7567ac56a39ae2361d2dc1f4c3ee7b
 find_package(workflow REQUIRED CONFIG HINTS ..)
 include_directories(${OPENSSL_INCLUDE_DIR} ${WORKFLOW_INCLUDE_DIR})
 link_directories(${WORKFLOW_LIB_DIR})
+
+if (KAFKA STREQUAL "y")
+	find_path(SNAPPY_INCLUDE_PATH NAMES snappy.h)
+	include_directories(${SNAPPY_INCLUDE_PATH})
+endif ()
 
 if (WIN32)
 		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   /MP /wd4200")
@@ -37,7 +51,13 @@ set(TUTORIAL_LIST
 )
 
 if (APPLE)
+<<<<<<< HEAD
 	set(WORKFLOW_LIB workflow OpenSSL::Crypto)
+=======
+	set(WORKFLOW_LIB workflow pthread OpenSSL::SSL OpenSSL::Crypto)
+elseif (ANDROID)
+	set(WORKFLOW_LIB workflow ssl crypto c)
+>>>>>>> 90cab0cb9a7567ac56a39ae2361d2dc1f4c3ee7b
 else ()
 	set(WORKFLOW_LIB workflow pthread OpenSSL::SSL OpenSSL::Crypto ${LIBRT})
 endif ()

@@ -1,10 +1,22 @@
 cmake_minimum_required(VERSION 3.6)
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+if(ANDROID)
+	include_directories(${OPENSSL_INCLUDE_DIR})
+	link_directories(${OPENSSL_LINK_DIR})
+else()
 	find_package(OpenSSL REQUIRED)
 endif ()
 
 include_directories(${OPENSSL_INCLUDE_DIR} ${INC_DIR}/workflow)
+
+if (KAFKA STREQUAL "y")
+	find_path(SNAPPY_INCLUDE_PATH NAMES snappy.h)
+	find_library(SNAPPY_LIB NAMES snappy)
+	if ((NOT SNAPPY_INCLUDE_PATH) OR (NOT SNAPPY_LIB))
+		message(FATAL_ERROR "Fail to find snappy with KAFKA=y")
+	endif ()
+	include_directories(${SNAPPY_INCLUDE_PATH})
+endif ()
 
 add_subdirectory(kernel)
 add_subdirectory(util)
@@ -55,9 +67,11 @@ add_library(
 	$<TARGET_OBJECTS:client>
 )
 
-if (APPLE)
+if(ANDROID)
+	target_link_libraries(${SHARED_LIB_NAME} crypto c)
+else()
 	target_link_libraries(${SHARED_LIB_NAME} OpenSSL::Crypto pthread)
-endif ()
+endif()
 
 set_target_properties(${STATIC_LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 set_target_properties(${SHARED_LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
@@ -67,6 +81,7 @@ if (KAFKA STREQUAL "y")
 	add_dependencies(util_kafka LINK_HEADERS)
 	add_dependencies(protocol_kafka LINK_HEADERS)
 	add_dependencies(factory_kafka LINK_HEADERS)
+
 	set(KAFKA_STATIC_LIB_NAME "wfkafka-static")
 	add_library(
 		${KAFKA_STATIC_LIB_NAME} STATIC
@@ -76,18 +91,20 @@ if (KAFKA STREQUAL "y")
 		$<TARGET_OBJECTS:factory_kafka>
 	)
 	set_target_properties(${KAFKA_STATIC_LIB_NAME} PROPERTIES OUTPUT_NAME "wfkafka")
-	if (NOT APPLE)
-		find_library(Snappy REQUIRED)
-		set(KAFKA_SHARED_LIB_NAME "wfkafka-shared")
-		add_library(
-			${KAFKA_SHARED_LIB_NAME} SHARED
-			$<TARGET_OBJECTS:client_kafka>
-			$<TARGET_OBJECTS:util_kafka>
-			$<TARGET_OBJECTS:protocol_kafka>
-			$<TARGET_OBJECTS:factory_kafka>
-		)
-		set_target_properties(${KAFKA_SHARED_LIB_NAME} PROPERTIES OUTPUT_NAME "wfkafka")
+	set(KAFKA_SHARED_LIB_NAME "wfkafka-shared")
+	add_library(
+		${KAFKA_SHARED_LIB_NAME} SHARED
+		$<TARGET_OBJECTS:client_kafka>
+		$<TARGET_OBJECTS:util_kafka>
+		$<TARGET_OBJECTS:protocol_kafka>
+		$<TARGET_OBJECTS:factory_kafka>
+	)
+	if (APPLE)
+		target_link_libraries(${KAFKA_SHARED_LIB_NAME}
+							  workflow z lz4 zstd ${SNAPPY_LIB}
+							  OpenSSL::SSL OpenSSL::Crypto pthread)
 	endif ()
+	set_target_properties(${KAFKA_SHARED_LIB_NAME} PROPERTIES OUTPUT_NAME "wfkafka")
 endif ()
 
 install(
@@ -108,12 +125,10 @@ if (KAFKA STREQUAL "y")
 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		COMPONENT devel
 	)
-	if (NOT APPLE)
-		install(
-			TARGETS ${KAFKA_SHARED_LIB_NAME}
-			LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-			COMPONENT devel
-		)
-	endif ()
+	install(
+		TARGETS ${KAFKA_SHARED_LIB_NAME}
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		COMPONENT devel
+	)
 endif ()
 
