@@ -8,17 +8,12 @@ project(tutorial
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-<<<<<<< HEAD
-find_library(LIBRT rt)
-find_package(OpenSSL REQUIRED COMPONENTS Crypto)
-=======
 if(ANDROID)
 	link_directories(${OPENSSL_LINK_DIR})
 else()
 	find_library(LIBRT rt)
 	find_package(OpenSSL REQUIRED)
 endif()
->>>>>>> 90cab0cb9a7567ac56a39ae2361d2dc1f4c3ee7b
 find_package(workflow REQUIRED CONFIG HINTS ..)
 include_directories(${OPENSSL_INCLUDE_DIR} ${WORKFLOW_INCLUDE_DIR})
 link_directories(${WORKFLOW_LIB_DIR})
@@ -51,15 +46,11 @@ set(TUTORIAL_LIST
 )
 
 if (APPLE)
-<<<<<<< HEAD
-	set(WORKFLOW_LIB workflow OpenSSL::Crypto)
-=======
-	set(WORKFLOW_LIB workflow pthread OpenSSL::SSL OpenSSL::Crypto)
+	set(WORKFLOW_LIB workflow pthread OpenSSL::Crypto)
 elseif (ANDROID)
-	set(WORKFLOW_LIB workflow ssl crypto c)
->>>>>>> 90cab0cb9a7567ac56a39ae2361d2dc1f4c3ee7b
+	set(WORKFLOW_LIB workflow crypto c)
 else ()
-	set(WORKFLOW_LIB workflow pthread OpenSSL::SSL OpenSSL::Crypto ${LIBRT})
+	set(WORKFLOW_LIB workflow pthread OpenSSL::Crypto ${LIBRT})
 endif ()
 
 foreach(src ${TUTORIAL_LIST})
